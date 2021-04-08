@@ -50,6 +50,7 @@ namespace OpenDBDiff.UI
             this.pnlDestination = new System.Windows.Forms.Panel();
             this.lblDestination = new System.Windows.Forms.Label();
             this.destDgv = new System.Windows.Forms.DataGridView();
+            this.HideIdenticalCheckBox = new System.Windows.Forms.CheckBox();
             this.pnlControl.SuspendLayout();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -63,6 +64,7 @@ namespace OpenDBDiff.UI
             // pnlControl
             // 
             this.pnlControl.BackColor = System.Drawing.Color.White;
+            this.pnlControl.Controls.Add(this.HideIdenticalCheckBox);
             this.pnlControl.Controls.Add(this.btnCommitChanges);
             this.pnlControl.Controls.Add(this.lblAdded);
             this.pnlControl.Controls.Add(this.lblModified);
@@ -237,6 +239,19 @@ namespace OpenDBDiff.UI
             this.destDgv.Size = new System.Drawing.Size(430, 462);
             this.destDgv.TabIndex = 3;
             // 
+            // HideIdenticalCheckBox
+            // 
+            this.HideIdenticalCheckBox.AutoSize = true;
+            this.HideIdenticalCheckBox.Checked = true;
+            this.HideIdenticalCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.HideIdenticalCheckBox.Location = new System.Drawing.Point(660, 14);
+            this.HideIdenticalCheckBox.Name = "HideIdenticalCheckBox";
+            this.HideIdenticalCheckBox.Size = new System.Drawing.Size(115, 17);
+            this.HideIdenticalCheckBox.TabIndex = 8;
+            this.HideIdenticalCheckBox.Text = "Hide identical rows";
+            this.HideIdenticalCheckBox.UseVisualStyleBackColor = true;
+            this.HideIdenticalCheckBox.CheckedChanged += new System.EventHandler(this.HideIdenticalCheckBox_CheckedChanged);
+            // 
             // DataCompareForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -279,5 +294,6 @@ namespace OpenDBDiff.UI
         private Panel pnlDestination;
         private Label lblDestination;
         private DataGridView destDgv;
+        private CheckBox HideIdenticalCheckBox;
     }
 }

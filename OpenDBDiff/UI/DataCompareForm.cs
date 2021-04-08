@@ -23,12 +23,34 @@ namespace OpenDBDiff.UI
             DataTable srcTable = Updater.getData(selected, srcConnectionString);
             DataTable destTable = Updater.getData(selected, destConnectionString);
 
+            if (HideIdenticalCheckBox.Checked)
+            {
+                // Remove Identical rows
+                var comp = DataRowComparer.Default;
+                for (int i = 0; i < srcTable.Rows.Count; i++)
+                {
+                    foreach (DataRow r2 in destTable.Rows)
+                    {
+                        var r = srcTable.Rows[i];
+                        if (comp.Equals(r, r2))
+                        {
+                            srcTable.Rows.RemoveAt(i);
+                            destTable.Rows.Remove(r2);
+                            i--;
+                            break;
+                        }
+                    }
+                }
+            }
+                       
             srcDgv.MultiSelect = false;
             srcDgv.ReadOnly = true;
             srcDgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             srcDgv.RowHeadersVisible = false;
-            srcDgv.DataSource = srcTable;
+            srcDgv.DataSource = srcTable; //.AsEnumerable().Except(destTable.AsEnumerable());
             srcDgv.Rows[0].Cells[0].Style.ForeColor = Color.Blue;
+            srcDgv.CellFormatting += new DataGridViewCellFormattingEventHandler(srcDgv_CellFormatting);
+
 
             destDgv.MultiSelect = false;
             destDgv.ReadOnly = true;
@@ -36,22 +58,80 @@ namespace OpenDBDiff.UI
             destDgv.RowHeadersVisible = false;
             destDgv.DataSource = destTable;
             destDgv.CellFormatting += new DataGridViewCellFormattingEventHandler(destDgv_CellFormatting);
+            
         }
 
         private void destDgv_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            DataTable table = (DataTable)destDgv.DataSource;
-            if (e.RowIndex < table.Rows.Count)
+            DataTable srcTable = (DataTable)srcDgv.DataSource;
+            DataTable dstTable = (DataTable)destDgv.DataSource;
+            int dstIdx = e.RowIndex;
+            if (dstIdx < dstTable.Rows.Count)
             {
-                if (table.Rows[e.RowIndex].RowState == DataRowState.Added)
+                if (dstTable.Rows[dstIdx].RowState == DataRowState.Added)
                 {
                     e.CellStyle.ForeColor = Color.Green;
                 }
-                else if (table.Rows[e.RowIndex].RowState == DataRowState.Modified)
+                else if (dstTable.Rows[dstIdx].RowState == DataRowState.Modified)
                 {
                     e.CellStyle.ForeColor = Color.Blue;
                 }
+
+                // find corresponding rowindex with PK // Assumes first column is PK...
+                var pk = dstTable.Rows[dstIdx][0];
+                int srcIdx;
+                for (srcIdx = 0; srcIdx < srcTable.Rows.Count; srcIdx++)
+                    if (pk.Equals(srcTable.Rows[srcIdx][0]))
+                        break;
+
+                SetChangedCellStyle(srcIdx, dstIdx, e);                               
+                
             }
+        }
+
+        private void srcDgv_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            DataTable srcTable = (DataTable)srcDgv.DataSource;
+            DataTable dstTable = (DataTable)destDgv.DataSource;
+            int srcIdx = e.RowIndex;
+            if (srcIdx < srcTable.Rows.Count)
+            {
+                // find corresponding rowindex with PK // Assumes first column is PK... use: pkIdx = dstTable.PrimaryKey[0].Ordinal;
+                var pk = srcTable.Rows[srcIdx][0];
+                int dstIdx;
+                for (dstIdx = 0; dstIdx < dstTable.Rows.Count; dstIdx++)
+                    if (pk.Equals(dstTable.Rows[dstIdx][0]))
+                        break;                               
+
+                SetChangedCellStyle(srcIdx, dstIdx, e);
+            }
+        }
+
+        private void SetChangedCellStyle(int srcIdx, int dstIdx, DataGridViewCellFormattingEventArgs e)
+        {
+            DataTable srcTable = (DataTable)srcDgv.DataSource;
+            DataTable dstTable = (DataTable)destDgv.DataSource;
+
+            bool areEqual = (srcIdx < srcTable.Rows.Count && dstIdx < dstTable.Rows.Count);
+            if (areEqual)
+            {
+                var s = srcTable.Rows[srcIdx][e.ColumnIndex];
+                var d = dstTable.Rows[dstIdx][e.ColumnIndex];
+                if (s == null || d == null)
+                    areEqual = (s == d);
+                else
+                    areEqual = s.Equals(d);
+            }
+
+            if (areEqual)
+            {
+                e.CellStyle.BackColor = Color.White;
+            }
+            else
+            {
+                e.CellStyle.BackColor = Color.LightSalmon;
+            }
+
         }
 
         private void btnCommitChanges_Click(object sender, EventArgs e)
@@ -126,5 +206,10 @@ namespace OpenDBDiff.UI
         private ISchemaBase selected;
         private string srcConnectionString;
         private string destConnectionString;
+
+        private void HideIdenticalCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            doCompare();
+        }
     }
 }
